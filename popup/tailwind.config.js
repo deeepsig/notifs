@@ -1,10 +1,11 @@
-/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcs').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
+        'dm-sans': ['DM Sans', 'sans-serif'],
         mono: ['SF Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace']
       },
       fontWeight: {

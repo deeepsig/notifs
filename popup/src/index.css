@@ -1,7 +1,7 @@
 /* ==============================
     Imports & Tailwind Directives
 ============================== */
-/* @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Instrument+Serif:ital@0;1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -11,8 +11,8 @@
     Global Styles & Resets
 ============================== */
 :root {
-  font-family: charis, system-ui, Avenir, Helvetica, Arial, sans-serif, Inter;
-  background-color: #fffbf1;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif, Inter, dm-sans;
+  background-color: #000;
 }
 
 * {
