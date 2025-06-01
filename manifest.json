@@ -21,14 +21,14 @@
     "default_title": "notifs",
     "default_popup": "dist/popup/index.html",
     "default_icon": {
-      "16": "dist/popup/assets/notifs-logo.png",
-      "48": "dist/popup/assets/notifs-logo.png", 
-      "128": "dist/popup/assets/notifs-logo.png"
+      "16": "dist/popup/notifs-logo.png",
+      "48": "dist/popup/notifs-logo.png", 
+      "128": "dist/popup/notifs-logo.png"
     }
   },
   "icons": {
-    "16": "dist/popup/assets/notifs-logo.png",
-    "48": "dist/popup/assets/notifs-logo.png",
-    "128": "dist/popup/assets/notifs-logo.png"
+    "16": "dist/popup/notifs-logo.png",
+    "48": "dist/popup/notifs-logo.png",
+    "128": "dist/popup/notifs-logo.png"
   }
 }
