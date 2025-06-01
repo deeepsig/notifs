@@ -5,7 +5,8 @@
   "description": "Alerts when your ChatGPT response is ready.",
   "permissions": ["tabs", "storage", "notifications"],
   "background": {
-    "service_worker": "dist/background.js"
+  "service_worker": "dist/background.js",
+  "type": "module"
   },
   "content_scripts": [
     {
