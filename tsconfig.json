@@ -1,0 +1,21 @@
+// NOTIFS/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["DOM", "ES2020"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Only compile files in src/ → emit to dist/ */
+    "rootDir": "src",
+    "outDir": "dist",
+    "noEmit": false,
+
+    /* Load ONLY the Chrome type definitions, ignore filesystem/har-format, etc. */
+    "types": ["chrome"]
+  },
+  "include": ["src"]
+}

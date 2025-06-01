@@ -1,0 +1,15 @@
+{
+  "name": "notifs",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:popup": "cd popup && npm run build",
+    "build:ts": "tsc --project tsconfig.json",
+    "build": "npm run build:popup && npm run build:ts",
+    "watch:ts": "tsc --watch --project tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.326",
+    "typescript": "^5.8.3"
+  }
+}
