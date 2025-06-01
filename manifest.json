@@ -3,34 +3,32 @@
   "name": "notifs",
   "version": "1.0.0",
   "description": "Alerts when your ChatGPT response is ready.",
-
   "permissions": ["tabs", "storage", "notifications"],
-
   "background": {
     "service_worker": "dist/background.js"
   },
-
   "content_scripts": [
     {
-      "matches": ["https://chat.openai.com/*"],
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://claude.ai/*"
+      ],
       "js": ["dist/content-script.js"],
       "run_at": "document_idle"
     }
   ],
-
   "action": {
     "default_title": "notifs",
-    "default_popup": "popup/index.html",
+    "default_popup": "dist/popup/index.html",
     "default_icon": {
-      "16": "popup/totoro-in-progress.png",
-      "48": "popup/totoro-in-progress.png",
-      "128": "popup/totoro-in-progress.png"
+      "16": "dist/popup/assets/notifs-logo.png",
+      "48": "dist/popup/assets/notifs-logo.png", 
+      "128": "dist/popup/assets/notifs-logo.png"
     }
   },
-
   "icons": {
-    "16": "popup/totoro-in-progress.png",
-    "48": "popup/totoro-in-progress.png",
-    "128": "popup/totoro-in-progress.png"
+    "16": "dist/popup/assets/notifs-logo.png",
+    "48": "dist/popup/assets/notifs-logo.png",
+    "128": "dist/popup/assets/notifs-logo.png"
   }
 }
