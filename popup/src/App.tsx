@@ -54,7 +54,7 @@ export default function App() {
   }
 
   return (
-    <div className="w-[320px] h-[240px] bg-black text-white flex flex-col p-4">
+    <div className="w-[320px] h-[240px] bg-black text-white flex flex-col p-4 font-dm-sans">
       {/* Navbar */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
