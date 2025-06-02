@@ -104,7 +104,7 @@ export default function App() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="flex items-center justify-between p-[10px] bg-black border border-[#6D6B6B]">
+      <div className="flex items-center justify-between px-[10px] py-[8px] bg-black border border-[#6D6B6B]">
         <div className="flex items-center gap-3">
           {getServiceLogo() && (
             <img
