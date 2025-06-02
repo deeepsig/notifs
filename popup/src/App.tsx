@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import notifsLogo from '/notifs-logo.png'
+import Navbar from './components/Navbar'
+import MainImage from './components/MainImage'
+import BottomBar from './components/BottomBar'
 import chatgptLogo from '/chatgpt-logo.png'
 import claudeLogo from '/claude-logo.png'
 import totoroInProgress from '/totoro-in-progress.png'
 import totoroDone from '/totoro-done.png'
-import { ArrowRightIcon, DotsThreeIcon, XIcon } from '@phosphor-icons/react'
+import totoroIdle from '/totoro-idle.png'
 
 interface StatusData {
   trackedTabId: number | null
@@ -28,13 +30,7 @@ export default function App() {
     )
   }, [])
 
-  const handleGoToChat = () => {
-    if (statusData.trackedTabId) {
-      chrome.tabs.update(statusData.trackedTabId, { active: true })
-      window.close()
-    }
-  }
-
+  // Common utility functions
   const getServiceLogo = () => {
     if (statusData.trackedUrl.includes('chat.openai.com')) return chatgptLogo
     if (statusData.trackedUrl.includes('claude.ai')) return claudeLogo
@@ -53,47 +49,57 @@ export default function App() {
     return 'Idle'
   }
 
+  const getImageSrc = () => {
+    if (statusData.status === 'idle') return totoroIdle
+    if (statusData.status === 'done') return totoroDone
+    return totoroInProgress
+  }
+
+  const getStatusTextColorClass = () => {
+    const isDone = statusData.status === 'done'
+    const isInProgress = statusData.status === 'in-progress'
+
+    // Status text colors: Done = #D77655, In-progress = #6F635F, Idle = #CAC6C6
+    return isDone
+      ? 'text-[#D77655]'
+      : isInProgress
+        ? 'text-[#6F635F]'
+        : 'text-[#CAC6C6]'
+  }
+
+  // Event handlers
+  const handleGoToChat = () => {
+    if (statusData.trackedTabId !== null) {
+      chrome.tabs.update(statusData.trackedTabId, { active: true })
+      window.close()
+    }
+  }
+
+  const handleOpenNewChat = (service: 'chatgpt' | 'claude') => {
+    const url =
+      service === 'chatgpt' ? 'https://chat.openai.com' : 'https://claude.ai'
+    window.open(url, '_blank')
+  }
+
+  const handleClose = () => {
+    window.close()
+  }
+
   return (
-    <div className="w-[320px] h-[240px] bg-black text-white flex flex-col p-4 font-dm-sans">
-      {/* Navbar */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <img src={notifsLogo} alt="notifs" className="w-6 h-6 rounded-full" />
-          <span className="text-sm font-semibold">notifs</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <DotsThreeIcon size={20} className="text-gray-400 cursor-pointer" />
-          <XIcon size={20} className="text-gray-400 cursor-pointer" />
-        </div>
-      </div>
+    <div className="w-[400px] h-full bg-black text-white flex flex-col p-[10px] mt-2 mr-2 font-dm-sans border border-[#6D6B6B]">
+      <Navbar onClose={handleClose} />
 
-      {/* Main Image */}
-      <div className="flex-1 mb-4">
-        <img
-          src={statusData.status === 'done' ? totoroDone : totoroInProgress}
-          alt="Status"
-          className="object-cover w-full h-full rounded-lg"
-        />
-      </div>
+      <MainImage statusText={getStatusText()} imageSrc={getImageSrc()} />
 
-      {/* Bottom Bar */}
-      <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
-        <div className="flex items-center gap-3">
-          {getServiceLogo() && (
-            <img src={getServiceLogo()!} alt="Service" className="w-5 h-5" />
-          )}
-          <span className="text-xs">{getTabTitle()}</span>
-        </div>
-
-        <button
-          onClick={handleGoToChat}
-          disabled={statusData.status === 'idle'}
-          className="flex items-center gap-2"
-        >
-          <span className="text-[10px] text-gray-400">{getStatusText()}</span>
-          {statusData.status !== 'idle' && <ArrowRightIcon size={16} />}
-        </button>
-      </div>
+      <BottomBar
+        isIdle={statusData.status === 'idle'}
+        statusText={getStatusText()}
+        statusTextColorClass={getStatusTextColorClass()}
+        tabTitle={getTabTitle()}
+        serviceLogo={getServiceLogo()}
+        onGoToChat={handleGoToChat}
+        onOpenNewChat={handleOpenNewChat}
+      />
     </div>
   )
 }
