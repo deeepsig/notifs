@@ -114,18 +114,15 @@ export default function App() {
       {isIdle ? (
         <div className="flex items-center justify-between px-[10px] py-[8px] bg-black border border-[#6D6B6B]">
           {/* Left: idle text */}
-          <span className="text-sm text-[#CAC6C6] italic">
+          <span className="text-base text-[#CAC6C6] italic">
             idling like totoro
           </span>
 
           {/* Right: "Start a new task" + two logos */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {}}
-              className="text-sm text-white hover:bg-[#141414] px-1 py-1 rounded-sm "
-            >
+            <p className="px-1 py-1 text-sm text-white rounded-sm ">
               Start a new task
-            </button>
+            </p>
             <button onClick={() => handleOpenNewChat('chatgpt')} className="">
               <img src={chatgptLogo} alt="ChatGPT" className="w-5 h-5" />
             </button>
