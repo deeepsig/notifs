@@ -55,9 +55,10 @@ export default function App() {
 
   const isDone = statusData.status === 'done'
   const isInProgress = statusData.status === 'in-progress'
-  const isIdle = statusData.status === 'idle'
+  // const isIdle = statusData.status === 'idle'
 
-  // Text color: Done = #D77655, In‐progress = #6F635F, Idle = #CAC6C6
+  // Status text colors:
+  // Done = #D77655, In-progress = #6F635F, Idle = #CAC6C6
   const statusTextColorClass = isDone
     ? 'text-[#D77655]'
     : isInProgress
@@ -74,22 +75,31 @@ export default function App() {
             notifs
           </span>
         </div>
+
         <div className="flex items-center gap-3">
-          <DotsThreeIcon
-            size={16}
-            className="text-[#CAC6C6] cursor-pointer"
-            weight="bold"
-          />
-          <XIcon size={16} className="text-[#CAC6C6] cursor-pointer" />
+          <button
+            aria-label="More options"
+            className="p-1 rounded-sm hover:bg-[#141414] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+          >
+            <DotsThreeIcon size={16} className="text-[#CAC6C6]" weight="bold" />
+          </button>
+          <button
+            aria-label="Close extension"
+            className="p-1 rounded-sm hover:bg-[#141414] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+            onClick={() => window.close()}
+          >
+            <XIcon size={16} className="text-[#CAC6C6]" />
+          </button>
         </div>
       </div>
 
       {/* Main Image */}
-      <div className="flex-1 mb-[10px]">
+      <div className="relative flex-1 mb-[10px]">
         <img
-          src={statusData.status === 'done' ? totoroDone : totoroInProgress}
-          alt="Status"
-          className="object-cover w-full h-full"
+          key={statusData.status}
+          src={isDone ? totoroDone : totoroInProgress}
+          alt={`Current status: ${getStatusText()}`}
+          className="object-cover w-full h-full transition-opacity duration-200 ease-in-out"
         />
       </div>
 
@@ -97,21 +107,29 @@ export default function App() {
       <div className="flex items-center justify-between p-[10px] bg-black border border-[#6D6B6B]">
         <div className="flex items-center gap-3">
           {getServiceLogo() && (
-            <img src={getServiceLogo()!} alt="Service" className="w-4 h-4" />
+            <img
+              src={getServiceLogo()!}
+              alt={`${getTabTitle()} icon`}
+              className="w-4 h-4"
+            />
           )}
           <span className="text-base">{getTabTitle()}</span>
         </div>
 
+        {/* "Go to Chat" is always enabled; use `group` so arrow moves on button hover */}
         <button
           onClick={handleGoToChat}
-          disabled={isIdle}
-          className="flex items-center gap-2"
+          aria-label={`Go to chat – status: ${getStatusText()}`}
+          className="group flex items-center gap-2 p-1 rounded-sm hover:bg-[#141414] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
         >
           <span className={['text-sm', statusTextColorClass].join(' ')}>
             {getStatusText()}
           </span>
 
-          {!isIdle && <ArrowRightIcon size={16} className="text-white" />}
+          <ArrowRightIcon
+            size={16}
+            className="text-white transition-transform duration-150 group-hover:translate-x-1"
+          />
         </button>
       </div>
     </div>
