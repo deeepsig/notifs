@@ -21,13 +21,66 @@ export default function App() {
     trackedUrl: ''
   })
 
+  // Fetch initial status
   useEffect(() => {
     chrome.runtime.sendMessage(
       { type: 'get-status' },
       (response: StatusData) => {
-        if (response) setStatusData(response)
+        if (response) {
+          console.log('Initial status:', response)
+          setStatusData(response)
+        }
       }
     )
+  }, [])
+
+  // Listen for status changes in real-time
+  useEffect(() => {
+    const handleStorageChange = (changes: {
+      [key: string]: chrome.storage.StorageChange
+    }) => {
+      console.log('Storage changed:', changes)
+
+      // If any of our tracked values changed, update the state
+      if (changes.status || changes.trackedTabId || changes.trackedUrl) {
+        chrome.runtime.sendMessage(
+          { type: 'get-status' },
+          (response: StatusData) => {
+            if (response) {
+              console.log('Updated status:', response)
+              setStatusData(response)
+            }
+          }
+        )
+      }
+    }
+
+    // Listen for storage changes
+    chrome.storage.onChanged.addListener(handleStorageChange)
+
+    // Also poll for status updates every 2 seconds to ensure UI stays in sync
+    const pollInterval = setInterval(() => {
+      chrome.runtime.sendMessage(
+        { type: 'get-status' },
+        (response: StatusData) => {
+          if (response) {
+            setStatusData((prevData) => {
+              // Only update if something actually changed to avoid unnecessary re-renders
+              if (JSON.stringify(prevData) !== JSON.stringify(response)) {
+                console.log('Status poll update:', response)
+                return response
+              }
+              return prevData
+            })
+          }
+        }
+      )
+    }, 2000)
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange)
+      clearInterval(pollInterval)
+    }
   }, [])
 
   // Common utility functions
@@ -85,8 +138,18 @@ export default function App() {
     window.close()
   }
 
+  const handleResetStatus = () => {
+    // Add a reset function for testing/debugging
+    chrome.storage.local.clear()
+    setStatusData({
+      trackedTabId: null,
+      status: 'idle',
+      trackedUrl: ''
+    })
+  }
+
   return (
-    <div className="w-[400px] h-full bg-black text-white flex flex-col p-[10px] mt-2 mr-2 font-dm-sans border border-[#6D6B6B]">
+    <div className="w-[400px] h-full bg-black text-white flex flex-col p-[10px] font-dm-sans border border-[#6D6B6B]">
       <Navbar onClose={handleClose} />
 
       <MainImage statusText={getStatusText()} imageSrc={getImageSrc()} />
@@ -100,6 +163,24 @@ export default function App() {
         onGoToChat={handleGoToChat}
         onOpenNewChat={handleOpenNewChat}
       />
+
+      {/* Debug info - remove in production */}
+      <div className="text-xs text-gray-500 mt-2 p-2 border-t border-gray-700">
+        <div>Status: {statusData.status}</div>
+        <div>Tab ID: {statusData.trackedTabId}</div>
+        <div>
+          URL:{' '}
+          {statusData.trackedUrl
+            ? statusData.trackedUrl.substring(0, 30) + '...'
+            : 'None'}
+        </div>
+        <button
+          onClick={handleResetStatus}
+          className="text-xs bg-gray-700 px-2 py-1 rounded mt-1"
+        >
+          Reset Status
+        </button>
+      </div>
     </div>
   )
 }

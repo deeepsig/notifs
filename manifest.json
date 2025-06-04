@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "notifs",
   "version": "1.0.0",
-  "description": "Alerts when your ChatGPT response is ready.",
+  "description": "Alerts when your Claude response is ready.",
   "permissions": ["tabs", "storage", "notifications"],
   "background": {
   "service_worker": "dist/background.js",
