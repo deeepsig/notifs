@@ -5,17 +5,16 @@
   "description": "Alerts when your Claude response is ready.",
   "permissions": ["tabs", "storage", "notifications"],
   "background": {
-  "service_worker": "dist/background.js",
-  "type": "module"
+    "service_worker": "dist/background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
       "matches": [
-        "https://chat.openai.com/*",
         "https://claude.ai/*"
       ],
       "js": ["dist/content-script.js"],
-      "run_at": "document_idle"
+      "run_at": "document_start"
     }
   ],
   "action": {

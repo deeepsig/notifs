@@ -88,10 +88,20 @@ chrome.runtime.onMessage.addListener(
     // 6.1 "User clicked Send/Submit" → in-progress
     if (message.type === "chat-in-progress" && sender.tab?.id !== undefined) {
       console.log('Setting status to in-progress');
+      
+      // Always update to the new tab - this handles tab switching
       trackedTabId = sender.tab.id;
       currentStatus = "in-progress";
       trackedUrl = message.url;
       persistStatus();
+      
+      // Clear any existing notifications when starting a new chat
+      chrome.notifications.getAll((notifications) => {
+        Object.keys(notifications).forEach((notificationId) => {
+          chrome.notifications.clear(notificationId);
+        });
+      });
+      
       return;
     }
 
@@ -99,8 +109,10 @@ chrome.runtime.onMessage.addListener(
     if (message.type === "chat-complete" && sender.tab?.id !== undefined) {
       console.log('Chat complete detected');
       
-      // Only update if it's the same tab we were tracking (or if nothing tracked yet)
-      if (trackedTabId === null || sender.tab.id === trackedTabId) {
+      // Update if it's the same tab we were tracking OR if it's a Claude tab
+      // (to handle cases where tab switching happened)
+      const isClaudeTab = message.url.includes('claude.ai');
+      if (trackedTabId === null || sender.tab.id === trackedTabId || isClaudeTab) {
         trackedTabId = sender.tab.id;
         currentStatus = "done";
         trackedUrl = message.url;
@@ -113,13 +125,10 @@ chrome.runtime.onMessage.addListener(
           type: "basic",
           iconUrl: chrome.runtime.getURL("dist/popup/totoro-done.png"),
           title: `${serviceName} Response Ready! 🎉`,
-          message: "Claude response is complete and ready to read.",
+          message: `${serviceName} response is complete and ready to read.`,
           priority: 2
         });
 
-        // Optional: Play a sound (if you want audio notification)
-        // This would require adding an audio file to your extension
-        
         console.log('Notification sent for completed chat');
       }
       return;
@@ -146,7 +155,54 @@ chrome.runtime.onMessage.addListener(
 );
 
 /**
- * 7. If the tracked tab closes, reset to idle
+ * 7. Handle tab activation (user switches tabs)
+ * ----------------------------------------------
+ */
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  console.log('Tab activated:', activeInfo.tabId);
+  
+  // Get the URL of the newly activated tab
+  chrome.tabs.get(activeInfo.tabId, (tab) => {
+    if (tab.url && tab.url.includes('claude.ai')) {
+      console.log('Activated Claude tab, checking if we should track it');
+      
+      // If we don't have a tracked tab or the URL is different, 
+      // update our tracking but keep status as idle until a new chat starts
+      if (trackedTabId === null || trackedUrl !== tab.url) {
+        trackedTabId = activeInfo.tabId;
+        trackedUrl = tab.url;
+        // Only reset to idle if we're switching to a different Claude conversation
+        if (currentStatus === 'done' || currentStatus === 'in-progress') {
+          currentStatus = 'idle';
+        }
+        persistStatus();
+      }
+    }
+  });
+});
+
+/**
+ * 8. Handle tab updates (URL changes within a tab)
+ * ------------------------------------------------
+ */
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Only care about URL changes to Claude
+  if (changeInfo.url && changeInfo.url.includes('claude.ai')) {
+    console.log('Claude tab URL changed:', changeInfo.url);
+    
+    // If this is our tracked tab or we should start tracking it
+    if (tabId === trackedTabId || trackedTabId === null) {
+      trackedTabId = tabId;
+      trackedUrl = changeInfo.url;
+      // Reset to idle when navigating to a new conversation
+      currentStatus = 'idle';
+      persistStatus();
+    }
+  }
+});
+
+/**
+ * 9. If the tracked tab closes, reset to idle
  * --------------------------------------------
  */
 chrome.tabs.onRemoved.addListener((closedTabId) => {
@@ -157,12 +213,19 @@ chrome.tabs.onRemoved.addListener((closedTabId) => {
     currentStatus = "idle";
     trackedUrl = "";
     chrome.storage.local.clear();
+    
+    // Clear any notifications when tab closes
+    chrome.notifications.getAll((notifications) => {
+      Object.keys(notifications).forEach((notificationId) => {
+        chrome.notifications.clear(notificationId);
+      });
+    });
   }
 });
 
 /**
- * 8. Handle notification clicks - open the chat tab
- * --------------------------------------------------
+ * 10. Handle notification clicks - open the chat tab
+ * ---------------------------------------------------
  */
 chrome.notifications.onClicked.addListener((notificationId) => {
   console.log('Notification clicked:', notificationId);
@@ -184,7 +247,7 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 });
 
 /**
- * 9. Debug: Log when extension starts
+ * 11. Debug: Log when extension starts
  * ------------------------------------
  */
 console.log('Extension background script loaded');
