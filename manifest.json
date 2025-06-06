@@ -30,5 +30,11 @@
     "16": "dist/popup/notifs-logo.png",
     "48": "dist/popup/notifs-logo.png",
     "128": "dist/popup/notifs-logo.png"
-  }
-}
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["dist/sounds/*.mp3", "dist/sounds/*.wav"],
+      "matches": ["https://claude.ai/*"]
+    }
+  ]
+} 
