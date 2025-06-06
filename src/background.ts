@@ -4,7 +4,6 @@
  * 1. Interfaces & Types
  * ----------------------
  */
-
 interface ChatInProgressMessage {
   type: "chat-in-progress";
   url: string;
@@ -19,10 +18,15 @@ interface GetStatusMessage {
   type: "get-status";
 }
 
+interface PlaySoundMessage {
+  type: "play-sound";
+}
+
 type ExtensionMessage =
   | ChatInProgressMessage
   | ChatCompleteMessage
-  | GetStatusMessage;
+  | GetStatusMessage
+  | PlaySoundMessage;
 
 export interface StatusData {
   trackedTabId: number | null;
@@ -63,7 +67,20 @@ function getServiceName(url: string): string {
 }
 
 /**
- * 5. Load persisted state on startup
+ * 5. Helper: Play notification sound
+ * ----------------------------------
+ */
+function playNotificationSound(): void {
+  if (trackedTabId !== null) {
+    // Send message to content script to play sound
+    chrome.tabs.sendMessage(trackedTabId, { type: "play-sound" }).catch((error) => {
+      console.log('Could not send play-sound message to content script:', error);
+    });
+  }
+}
+
+/**
+ * 6. Load persisted state on startup
  * ----------------------------------
  */
 chrome.storage.local.get(['trackedTabId', 'status', 'trackedUrl'], (items) => {
@@ -74,7 +91,7 @@ chrome.storage.local.get(['trackedTabId', 'status', 'trackedUrl'], (items) => {
 });
 
 /**
- * 6. Incoming Message Handler
+ * 7. Incoming Message Handler
  * ----------------------------
  */
 chrome.runtime.onMessage.addListener(
@@ -84,8 +101,8 @@ chrome.runtime.onMessage.addListener(
     sendResponse: (response?: StatusData) => void
   ) => {
     console.log('Received message:', message, 'from sender:', sender);
-
-    // 6.1 "User clicked Send/Submit" → in-progress
+    
+    // 7.1 "User clicked Send/Submit" → in-progress
     if (message.type === "chat-in-progress" && sender.tab?.id !== undefined) {
       console.log('Setting status to in-progress');
       
@@ -104,8 +121,8 @@ chrome.runtime.onMessage.addListener(
       
       return;
     }
-
-    // 6.2 "AI finished streaming" → chat-complete
+    
+    // 7.2 "AI finished streaming" → chat-complete
     if (message.type === "chat-complete" && sender.tab?.id !== undefined) {
       console.log('Chat complete detected');
       
@@ -117,8 +134,10 @@ chrome.runtime.onMessage.addListener(
         currentStatus = "done";
         trackedUrl = message.url;
         persistStatus();
-
         const serviceName = getServiceName(message.url);
+        
+        // Play notification sound
+        playNotificationSound();
         
         // Fire a native desktop notification
         chrome.notifications.create({
@@ -128,13 +147,12 @@ chrome.runtime.onMessage.addListener(
           message: `Click here to read the response.`,
           priority: 2
         });
-
         console.log('Notification sent for completed chat');
       }
       return;
     }
-
-    // 6.3 Popup asks "get-status" → return stored StatusData
+    
+    // 7.3 Popup asks "get-status" → return stored StatusData
     if (message.type === "get-status") {
       chrome.storage.local.get(
         ["trackedTabId", "status", "trackedUrl"],
@@ -155,7 +173,7 @@ chrome.runtime.onMessage.addListener(
 );
 
 /**
- * 7. Handle tab activation (user switches tabs)
+ * 8. Handle tab activation (user switches tabs)
  * ----------------------------------------------
  */
 chrome.tabs.onActivated.addListener((activeInfo) => {
@@ -182,7 +200,7 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 });
 
 /**
- * 8. Handle tab updates (URL changes within a tab)
+ * 9. Handle tab updates (URL changes within a tab)
  * ------------------------------------------------
  */
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -202,7 +220,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 /**
- * 9. If the tracked tab closes, reset to idle
+ * 10. If the tracked tab closes, reset to idle
  * --------------------------------------------
  */
 chrome.tabs.onRemoved.addListener((closedTabId) => {
@@ -224,7 +242,7 @@ chrome.tabs.onRemoved.addListener((closedTabId) => {
 });
 
 /**
- * 10. Handle notification clicks - open the chat tab
+ * 11. Handle notification clicks - open the chat tab
  * ---------------------------------------------------
  */
 chrome.notifications.onClicked.addListener((notificationId) => {
@@ -247,7 +265,7 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 });
 
 /**
- * 11. Debug: Log when extension starts
+ * 12. Debug: Log when extension starts
  * ------------------------------------
  */
 console.log('Extension background script loaded');
