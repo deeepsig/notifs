@@ -123,9 +123,9 @@ chrome.runtime.onMessage.addListener(
         // Fire a native desktop notification
         chrome.notifications.create({
           type: "basic",
-          iconUrl: chrome.runtime.getURL("dist/popup/totoro-done.png"),
-          title: `${serviceName} Response Ready! 🎉`,
-          message: `${serviceName} response is complete and ready to read.`,
+          iconUrl: chrome.runtime.getURL("dist/popup/notifs-logo.png"),
+          title: `${serviceName} Response Complete`,
+          message: `Click here to read the response.`,
           priority: 2
         });
 
