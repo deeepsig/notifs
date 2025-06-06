@@ -1,6 +1,5 @@
 // components/BottomBar.tsx
 import { ArrowRightIcon } from '@phosphor-icons/react'
-import chatgptLogo from '/chatgpt-logo.png'
 import claudeLogo from '/claude-logo.png'
 import { useExtension } from '../contexts/ExtensionContext'
 
@@ -31,9 +30,9 @@ export default function BottomBar() {
           <p className="px-1 py-1 text-sm text-[#CAC6C6] rounded-sm">
             Start a new task
           </p>
-          <button onClick={() => handleOpenNewChat('chatgpt')} className="">
+          {/* <button onClick={() => handleOpenNewChat('chatgpt')} className="">
             <img src={chatgptLogo} alt="ChatGPT" className="w-5 h-5" />
-          </button>
+          </button> */}
           <button onClick={() => handleOpenNewChat('claude')} className="">
             <img src={claudeLogo} alt="Claude" className="w-5 h-5" />
           </button>
