@@ -21,6 +21,7 @@ interface StatusData {
 interface ExtensionContextType {
   statusData: StatusData
   isImageHidden: boolean
+  isSoundEnabled: boolean
   getServiceLogo: () => string | null
   getTabTitle: () => string
   getStatusText: () => string
@@ -30,6 +31,7 @@ interface ExtensionContextType {
   handleOpenNewChat: (service: 'chatgpt' | 'claude') => void
   handleClose: () => void
   toggleImageVisibility: () => void
+  toggleSoundEnabled: () => void
 }
 
 const ExtensionContext = createContext<ExtensionContextType | undefined>(
@@ -55,12 +57,16 @@ export const ExtensionProvider = ({ children }: ExtensionProviderProps) => {
     trackedUrl: ''
   })
   const [isImageHidden, setIsImageHidden] = useState(false)
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true)
 
-  // Load image visibility preference from storage
+  // Load preferences from storage
   useEffect(() => {
-    chrome.storage.local.get(['imageHidden'], (result) => {
+    chrome.storage.local.get(['imageHidden', 'soundEnabled'], (result) => {
       if (result.imageHidden !== undefined) {
         setIsImageHidden(result.imageHidden)
+      }
+      if (result.soundEnabled !== undefined) {
+        setIsSoundEnabled(result.soundEnabled)
       }
     })
   }, [])
@@ -88,6 +94,11 @@ export const ExtensionProvider = ({ children }: ExtensionProviderProps) => {
       // Handle image visibility changes
       if (changes.imageHidden) {
         setIsImageHidden(changes.imageHidden.newValue)
+      }
+
+      // Handle sound enabled changes
+      if (changes.soundEnabled) {
+        setIsSoundEnabled(changes.soundEnabled.newValue)
       }
 
       // If any of our tracked values changed, update the state
@@ -193,9 +204,17 @@ export const ExtensionProvider = ({ children }: ExtensionProviderProps) => {
     chrome.storage.local.set({ imageHidden: newVisibility })
   }
 
+  const toggleSoundEnabled = () => {
+    const newSoundEnabled = !isSoundEnabled
+    setIsSoundEnabled(newSoundEnabled)
+    // Save preference to storage
+    chrome.storage.local.set({ soundEnabled: newSoundEnabled })
+  }
+
   const value: ExtensionContextType = {
     statusData,
     isImageHidden,
+    isSoundEnabled,
     getServiceLogo,
     getTabTitle,
     getStatusText,
@@ -204,7 +223,8 @@ export const ExtensionProvider = ({ children }: ExtensionProviderProps) => {
     handleGoToChat,
     handleOpenNewChat,
     handleClose,
-    toggleImageVisibility
+    toggleImageVisibility,
+    toggleSoundEnabled
   }
 
   return (
