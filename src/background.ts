@@ -1,5 +1,4 @@
 // notifs/src/background.ts
-
 /**
  * 1. Interfaces & Types
  * ----------------------
@@ -8,20 +7,16 @@ interface ChatInProgressMessage {
   type: "chat-in-progress";
   url: string;
 }
-
 interface ChatCompleteMessage {
   type: "chat-complete";
   url: string;
 }
-
 interface GetStatusMessage {
   type: "get-status";
 }
-
 interface PlaySoundMessage {
   type: "play-sound";
 }
-
 type ExtensionMessage =
   | ChatInProgressMessage
   | ChatCompleteMessage
@@ -32,6 +27,7 @@ export interface StatusData {
   trackedTabId: number | null;
   status: "idle" | "in-progress" | "done";
   trackedUrl: string;
+  tabTitle?: string; // Add optional tab title field
 }
 
 /**
@@ -41,9 +37,26 @@ export interface StatusData {
 let trackedTabId: number | null = null;
 let currentStatus: StatusData["status"] = "idle";
 let trackedUrl: string = "";
+let tabTitle: string = "";
 
 /**
- * 3. Helper: Persist status in chrome.storage
+ * 3. Helper: Get and store tab title
+ * ----------------------------------
+ */
+function updateTabTitle(tabId: number): void {
+  if (tabId) {
+    chrome.tabs.get(tabId, (tab) => {
+      if (tab && tab.title) {
+        tabTitle = tab.title;
+        console.log('Updated tab title:', tabTitle);
+        persistStatus();
+      }
+    });
+  }
+}
+
+/**
+ * 4. Helper: Persist status in chrome.storage
  * --------------------------------------------
  */
 function persistStatus(): void {
@@ -51,13 +64,14 @@ function persistStatus(): void {
     trackedTabId,
     status: currentStatus,
     trackedUrl,
+    tabTitle: tabTitle || undefined,
   };
   console.log('Persisting status:', payload);
   chrome.storage.local.set(payload);
 }
 
 /**
- * 4. Helper: Get service name from URL
+ * 5. Helper: Get service name from URL
  * ------------------------------------
  */
 function getServiceName(url: string): string {
@@ -67,7 +81,7 @@ function getServiceName(url: string): string {
 }
 
 /**
- * 5. Helper: Play notification sound
+ * 6. Helper: Play notification sound
  * ----------------------------------
  */
 function playNotificationSound(): void {
@@ -80,18 +94,19 @@ function playNotificationSound(): void {
 }
 
 /**
- * 6. Load persisted state on startup
+ * 7. Load persisted state on startup
  * ----------------------------------
  */
-chrome.storage.local.get(['trackedTabId', 'status', 'trackedUrl'], (items) => {
+chrome.storage.local.get(['trackedTabId', 'status', 'trackedUrl', 'tabTitle'], (items) => {
   trackedTabId = items.trackedTabId ?? null;
   currentStatus = items.status ?? 'idle';
   trackedUrl = items.trackedUrl ?? '';
-  console.log('Loaded persisted state:', { trackedTabId, currentStatus, trackedUrl });
+  tabTitle = items.tabTitle ?? '';
+  console.log('Loaded persisted state:', { trackedTabId, currentStatus, trackedUrl, tabTitle });
 });
 
 /**
- * 7. Incoming Message Handler
+ * 8. Incoming Message Handler
  * ----------------------------
  */
 chrome.runtime.onMessage.addListener(
@@ -102,7 +117,7 @@ chrome.runtime.onMessage.addListener(
   ) => {
     console.log('Received message:', message, 'from sender:', sender);
     
-    // 7.1 "User clicked Send/Submit" → in-progress
+    // 8.1 "User clicked Send/Submit" → in-progress
     if (message.type === "chat-in-progress" && sender.tab?.id !== undefined) {
       console.log('Setting status to in-progress');
       
@@ -110,7 +125,9 @@ chrome.runtime.onMessage.addListener(
       trackedTabId = sender.tab.id;
       currentStatus = "in-progress";
       trackedUrl = message.url;
-      persistStatus();
+      
+      // Get and store the actual tab title
+      updateTabTitle(sender.tab.id);
       
       // Clear any existing notifications when starting a new chat
       chrome.notifications.getAll((notifications) => {
@@ -122,7 +139,7 @@ chrome.runtime.onMessage.addListener(
       return;
     }
     
-    // 7.2 "AI finished streaming" → chat-complete
+    // 8.2 "AI finished streaming" → chat-complete
     if (message.type === "chat-complete" && sender.tab?.id !== undefined) {
       console.log('Chat complete detected');
       
@@ -133,34 +150,53 @@ chrome.runtime.onMessage.addListener(
         trackedTabId = sender.tab.id;
         currentStatus = "done";
         trackedUrl = message.url;
-        persistStatus();
+        
         const serviceName = getServiceName(message.url);
         
         // Play notification sound
         playNotificationSound();
         
-        // Fire a native desktop notification
-        chrome.notifications.create({
-          type: "basic",
-          iconUrl: chrome.runtime.getURL("dist/popup/notifs-logo.png"),
-          title: `${serviceName} Response Complete`,
-          message: `Click here to read the response.`,
-          priority: 2
-        });
-        console.log('Notification sent for completed chat');
+        // Wait for tab title to update, then show notification
+        const checkAndShowNotification = () => {
+          if (sender.tab?.id === undefined) return;
+          
+          chrome.tabs.get(sender.tab.id, (tab) => {
+            if (tab.title && tab.title !== 'Claude' && !tab.title.includes('New chat')) {
+              // We have a proper conversation title
+              tabTitle = tab.title;
+              persistStatus();
+              
+              // Fire a native desktop notification
+              chrome.notifications.create({
+                type: "basic",
+                iconUrl: chrome.runtime.getURL("dist/popup/notifs-logo.png"),
+                title: tab.title,
+                message: `Click here to read the response.`,
+                priority: 2
+              });
+              console.log('Notification sent for completed chat with title:', tab.title);
+            } else {
+              // Tab title not ready yet, wait a bit and try again
+              setTimeout(checkAndShowNotification, 500);
+            }
+          });
+        };
+        
+        checkAndShowNotification();
       }
       return;
     }
     
-    // 7.3 Popup asks "get-status" → return stored StatusData
+    // 8.3 Popup asks "get-status" → return stored StatusData
     if (message.type === "get-status") {
       chrome.storage.local.get(
-        ["trackedTabId", "status", "trackedUrl"],
+        ["trackedTabId", "status", "trackedUrl", "tabTitle"],
         (items) => {
           const responsePayload: StatusData = {
             trackedTabId: items.trackedTabId ?? null,
             status: items.status ?? "idle",
             trackedUrl: items.trackedUrl ?? "",
+            tabTitle: items.tabTitle ?? undefined,
           };
           console.log('Sending status response:', responsePayload);
           sendResponse(responsePayload);
@@ -173,7 +209,7 @@ chrome.runtime.onMessage.addListener(
 );
 
 /**
- * 8. Handle tab activation (user switches tabs)
+ * 9. Handle tab activation (user switches tabs)
  * ----------------------------------------------
  */
 chrome.tabs.onActivated.addListener((activeInfo) => {
@@ -189,6 +225,12 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
       if (trackedTabId === null || trackedUrl !== tab.url) {
         trackedTabId = activeInfo.tabId;
         trackedUrl = tab.url;
+        
+        // Update tab title
+        if (tab.title) {
+          tabTitle = tab.title;
+        }
+        
         // Only reset to idle if we're switching to a different Claude conversation
         if (currentStatus === 'done' || currentStatus === 'in-progress') {
           currentStatus = 'idle';
@@ -200,11 +242,11 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 });
 
 /**
- * 9. Handle tab updates (URL changes within a tab)
- * ------------------------------------------------
+ * 10. Handle tab updates (URL changes within a tab AND title changes)
+ * -------------------------------------------------------------------
  */
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // Only care about URL changes to Claude
+  // Handle URL changes to Claude
   if (changeInfo.url && changeInfo.url.includes('claude.ai')) {
     console.log('Claude tab URL changed:', changeInfo.url);
     
@@ -212,15 +254,28 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (tabId === trackedTabId || trackedTabId === null) {
       trackedTabId = tabId;
       trackedUrl = changeInfo.url;
+      
+      // Update title if available
+      if (tab.title) {
+        tabTitle = tab.title;
+      }
+      
       // Reset to idle when navigating to a new conversation
       currentStatus = 'idle';
       persistStatus();
     }
   }
+  
+  // Handle title changes for our tracked tab
+  if (changeInfo.title && tabId === trackedTabId) {
+    console.log('Tracked tab title changed:', changeInfo.title);
+    tabTitle = changeInfo.title;
+    persistStatus();
+  }
 });
 
 /**
- * 10. If the tracked tab closes, reset to idle
+ * 11. If the tracked tab closes, reset to idle
  * --------------------------------------------
  */
 chrome.tabs.onRemoved.addListener((closedTabId) => {
@@ -230,6 +285,7 @@ chrome.tabs.onRemoved.addListener((closedTabId) => {
     trackedTabId = null;
     currentStatus = "idle";
     trackedUrl = "";
+    tabTitle = "";
     chrome.storage.local.clear();
     
     // Clear any notifications when tab closes
@@ -242,7 +298,7 @@ chrome.tabs.onRemoved.addListener((closedTabId) => {
 });
 
 /**
- * 11. Handle notification clicks - open the chat tab
+ * 12. Handle notification clicks - open the chat tab
  * ---------------------------------------------------
  */
 chrome.notifications.onClicked.addListener((notificationId) => {
@@ -265,7 +321,7 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 });
 
 /**
- * 12. Debug: Log when extension starts
+ * 13. Debug: Log when extension starts
  * ------------------------------------
  */
 console.log('Extension background script loaded');

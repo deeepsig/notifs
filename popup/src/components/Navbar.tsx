@@ -66,10 +66,8 @@ export default function Navbar() {
   return (
     <div className="flex items-center justify-between mb-[10px]">
       <div className="flex items-center gap-2">
-        <img src={notifsLogo} alt="notifs" className="w-4 h-4" />
-        <span className="text-base font-normal bg-gradient-to-b from-[#D97757] to-[#FFFFFF] bg-clip-text text-transparent">
-          notifs
-        </span>
+        <img src={notifsLogo} alt="notifs" className="w-5 h-5" />
+        <span className="text-base font-normal text-white">notifs</span>
       </div>
       <div className="relative flex items-center gap-2">
         <button

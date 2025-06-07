@@ -16,6 +16,7 @@ interface StatusData {
   trackedTabId: number | null
   status: 'idle' | 'in-progress' | 'done'
   trackedUrl: string
+  tabTitle?: string // Add optional tab title field
 }
 
 interface ExtensionContextType {
@@ -54,7 +55,8 @@ export const ExtensionProvider = ({ children }: ExtensionProviderProps) => {
   const [statusData, setStatusData] = useState<StatusData>({
     trackedTabId: null,
     status: 'idle',
-    trackedUrl: ''
+    trackedUrl: '',
+    tabTitle: undefined
   })
   const [isImageHidden, setIsImageHidden] = useState(false)
   const [isSoundEnabled, setIsSoundEnabled] = useState(true)
@@ -90,19 +92,21 @@ export const ExtensionProvider = ({ children }: ExtensionProviderProps) => {
       [key: string]: chrome.storage.StorageChange
     }) => {
       console.log('Storage changed:', changes)
-
       // Handle image visibility changes
       if (changes.imageHidden) {
         setIsImageHidden(changes.imageHidden.newValue)
       }
-
       // Handle sound enabled changes
       if (changes.soundEnabled) {
         setIsSoundEnabled(changes.soundEnabled.newValue)
       }
-
       // If any of our tracked values changed, update the state
-      if (changes.status || changes.trackedTabId || changes.trackedUrl) {
+      if (
+        changes.status ||
+        changes.trackedTabId ||
+        changes.trackedUrl ||
+        changes.tabTitle
+      ) {
         chrome.runtime.sendMessage(
           { type: 'get-status' },
           (response: StatusData) => {
@@ -151,6 +155,20 @@ export const ExtensionProvider = ({ children }: ExtensionProviderProps) => {
   }
 
   const getTabTitle = () => {
+    // First try to use the actual tab title if available
+    if (statusData.tabTitle) {
+      // Clean up Claude tab titles by removing " - Claude" suffix
+      if (statusData.trackedUrl.includes('claude.ai')) {
+        return statusData.tabTitle.replace(/ - Claude$/, '')
+      }
+      // Clean up ChatGPT tab titles by removing " - ChatGPT" suffix
+      if (statusData.trackedUrl.includes('chat.openai.com')) {
+        return statusData.tabTitle.replace(/ - ChatGPT$/, '')
+      }
+      return statusData.tabTitle
+    }
+
+    // Fallback to URL-based detection
     if (statusData.trackedUrl.includes('chat.openai.com')) return 'ChatGPT'
     if (statusData.trackedUrl.includes('claude.ai')) return 'Claude'
     return 'Chat'
