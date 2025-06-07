@@ -43,17 +43,23 @@ export default function BottomBar() {
 
   return (
     <div className="flex items-center justify-between px-[10px] py-[8px] bg-black border border-[#555555]">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0 max-w-[240px]">
         {serviceLogo && (
-          <img src={serviceLogo} alt={`${tabTitle} icon`} className="w-5 h-5" />
+          <img
+            src={serviceLogo}
+            alt={`${tabTitle} icon`}
+            className="flex-shrink-0 w-5 h-5"
+          />
         )}
-        <span className="text-base text-[#CAC6C6] ">{tabTitle}</span>
+        <span className="text-base text-[#CAC6C6] truncate" title={tabTitle}>
+          {tabTitle}
+        </span>
       </div>
       {/* "Go to Chat" */}
       <button
         onClick={handleGoToChat}
         aria-label={`Go to chat – status: ${statusText}`}
-        className="group flex items-center gap-2 p-1 rounded-sm hover:bg-[#141414]"
+        className="group flex items-center gap-2 p-1 rounded-sm hover:bg-[#141414] flex-shrink-0"
       >
         <span className={['text-sm', statusTextColorClass].join(' ')}>
           {statusText}
