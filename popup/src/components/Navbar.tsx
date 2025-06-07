@@ -4,6 +4,8 @@ import {
   XIcon,
   EyeIcon,
   EyeSlashIcon,
+  SpeakerHighIcon,
+  SpeakerSlashIcon,
   QuestionIcon,
   XLogoIcon
 } from '@phosphor-icons/react'
@@ -12,7 +14,13 @@ import notifsLogo from '/notifs-logo.png'
 import { useExtension } from '../contexts/ExtensionContext'
 
 export default function Navbar() {
-  const { handleClose, isImageHidden, toggleImageVisibility } = useExtension()
+  const {
+    handleClose,
+    isImageHidden,
+    isSoundEnabled,
+    toggleImageVisibility,
+    toggleSoundEnabled
+  } = useExtension()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -41,6 +49,10 @@ export default function Navbar() {
     toggleImageVisibility()
   }
 
+  const handleToggleSoundEnabled = () => {
+    toggleSoundEnabled()
+  }
+
   const handleHelpClick = () => {
     window.open('https://github.com/deeepsig/notifs', '_blank')
     setIsDropdownOpen(false)
@@ -59,7 +71,7 @@ export default function Navbar() {
           notifs
         </span>
       </div>
-      <div className="flex items-center gap-2 relative">
+      <div className="relative flex items-center gap-2">
         <button
           aria-label={isImageHidden ? 'Show image' : 'Hide image'}
           className="p-1 rounded-sm hover:bg-[#141414]"
@@ -69,6 +81,18 @@ export default function Navbar() {
             <EyeSlashIcon size={16} className="text-[#CAC6C6]" />
           ) : (
             <EyeIcon size={16} className="text-[#CAC6C6]" />
+          )}
+        </button>
+
+        <button
+          aria-label={isSoundEnabled ? 'Disable sound' : 'Enable sound'}
+          className="p-1 rounded-sm hover:bg-[#141414]"
+          onClick={handleToggleSoundEnabled}
+        >
+          {isSoundEnabled ? (
+            <SpeakerHighIcon size={16} className="text-[#CAC6C6]" />
+          ) : (
+            <SpeakerSlashIcon size={16} className="text-[#CAC6C6]" />
           )}
         </button>
 

@@ -5,97 +5,106 @@ let currentUrl = '';
 let lastObservedUrl = '';
 
 /**
- * Play notification sound - fixed version with TypeScript compatibility
+ * Play notification sound - with sound preference check
  */
 function playNotificationSound(): void {
-  try {
-    console.log('Attempting to play notification sound...');
+  // First check if sound is enabled in user preferences
+  chrome.storage.local.get(['soundEnabled'], (result) => {
+    const isSoundEnabled = result.soundEnabled !== false; // Default to true if not set
     
-    // Updated path to match your actual file location
-    const soundUrl = chrome.runtime.getURL('dist/sounds/dustBunnies.mp3');
-    console.log('Sound URL:', soundUrl);
-    
-    const audio = new Audio(soundUrl);
-    audio.volume = 0.8;
-    audio.preload = 'auto';
-    
-    // Add more comprehensive error handling
-    audio.addEventListener('error', (e) => {
-      console.error('Audio error:', e);
-      console.error('Error details:', {
-        error: (e as any).error,
-        type: e.type,
-        target: e.target,
-        networkState: audio.networkState,
-        readyState: audio.readyState
-      });
-      
-      // Try fallback - browser notification sound
-      console.log('Attempting fallback notification...');
-      // This will trigger the browser's default notification sound
-      try {
-        new Notification('Claude Response Ready', {
-          body: 'Your response is complete.',
-          icon: chrome.runtime.getURL('dist/popup/notifs-logo.png'),
-          silent: false
-        });
-      } catch (notifError) {
-        console.error('Notification fallback failed:', notifError);
-      }
-    });
-    
-    audio.addEventListener('canplay', () => {
-      console.log('Audio can play, attempting to start...');
-    });
-    
-    audio.addEventListener('loadeddata', () => {
-      console.log('Audio data loaded successfully');
-    });
-    
-    // Simple play with better error handling
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          console.log('Audio played successfully');
-        })
-        .catch((error) => {
-          console.error('Audio play failed:', error);
-          console.error('Error name:', error.name);
-          console.error('Error message:', error.message);
-          
-          // Try alternative approach - create a simple beep
-          try {
-            // TypeScript-safe AudioContext creation
-            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-            if (AudioContextClass) {
-              const audioContext = new AudioContextClass();
-              const oscillator = audioContext.createOscillator();
-              const gainNode = audioContext.createGain();
-              
-              oscillator.connect(gainNode);
-              gainNode.connect(audioContext.destination);
-              
-              oscillator.frequency.value = 800; // Frequency in Hz
-              gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-              gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-              
-              oscillator.start(audioContext.currentTime);
-              oscillator.stop(audioContext.currentTime + 0.5);
-              
-              console.log('Played fallback beep sound');
-            } else {
-              console.log('AudioContext not available');
-            }
-          } catch (beepError) {
-            console.error('Fallback beep also failed:', beepError);
-          }
-        });
+    if (!isSoundEnabled) {
+      console.log('Sound is disabled in preferences, skipping notification sound');
+      return;
     }
     
-  } catch (error) {
-    console.error('Error in playNotificationSound:', error);
-  }
+    try {
+      console.log('Attempting to play notification sound...');
+      
+      // Updated path to match your actual file location
+      const soundUrl = chrome.runtime.getURL('dist/sounds/dustBunnies.mp3');
+      console.log('Sound URL:', soundUrl);
+      
+      const audio = new Audio(soundUrl);
+      audio.volume = 0.8;
+      audio.preload = 'auto';
+      
+      // Add more comprehensive error handling
+      audio.addEventListener('error', (e) => {
+        console.error('Audio error:', e);
+        console.error('Error details:', {
+          error: (e as any).error,
+          type: e.type,
+          target: e.target,
+          networkState: audio.networkState,
+          readyState: audio.readyState
+        });
+        
+        // Try fallback - browser notification sound (only if sound is enabled)
+        console.log('Attempting fallback notification...');
+        try {
+          new Notification('Claude Response Ready', {
+            body: 'Your response is complete.',
+            icon: chrome.runtime.getURL('dist/popup/notifs-logo.png'),
+            silent: false
+          });
+        } catch (notifError) {
+          console.error('Notification fallback failed:', notifError);
+        }
+      });
+      
+      audio.addEventListener('canplay', () => {
+        console.log('Audio can play, attempting to start...');
+      });
+      
+      audio.addEventListener('loadeddata', () => {
+        console.log('Audio data loaded successfully');
+      });
+      
+      // Simple play with better error handling
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Audio played successfully');
+          })
+          .catch((error) => {
+            console.error('Audio play failed:', error);
+            console.error('Error name:', error.name);
+            console.error('Error message:', error.message);
+            
+            // Try alternative approach - create a simple beep (only if sound is enabled)
+            try {
+              // TypeScript-safe AudioContext creation
+              const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+              if (AudioContextClass) {
+                const audioContext = new AudioContextClass();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800; // Frequency in Hz
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                
+                console.log('Played fallback beep sound');
+              } else {
+                console.log('AudioContext not available');
+              }
+            } catch (beepError) {
+              console.error('Fallback beep also failed:', beepError);
+            }
+          });
+      }
+      
+    } catch (error) {
+      console.error('Error in playNotificationSound:', error);
+    }
+  });
 }
 
 /**
