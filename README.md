@@ -11,6 +11,8 @@ It will notify you with:
 
 You can also monitor the chat status through the extension's UI and customize the experience to your liking.
 
+https://github.com/user-attachments/assets/fc447a6a-336a-49ab-8540-e888ede6e754
+
 ## Note
 The extension handles one chat session per browser window. To monitor multiple Claude chat sessions, open each chat in a different window.
 
@@ -20,7 +22,8 @@ I made this to make my life easier since I use Claude a lot, and I thought it'd 
 I'd like to continue improving this with more customization options and support for different AI chats, but that'll have to wait—I need to get a job first lol. 
 
 If you'd like to see something added to the extension, please reach out or open an issue. Even better, contribute to this yourself—I'd love to see that!
-  
+
+
 ## Repo Layout
 - `src/background.ts` → background service worker
 - `src/content-script.ts` → detects "Send"/"Regenerate" on the chat tab
