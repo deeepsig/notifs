@@ -35,9 +35,15 @@ If you'd like to see something added to the extension, please reach out or open 
    - There is a commented out test handler in main.tsx that you can use to test the UI.
 4. `npm run build` to output to `dist/popup` and `dist/sounds`
 
-## Build & Install
+## Build, Install & Use
 1. From repo root:  
    ```bash
    npm install       
    npm run build     
    ```
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" by toggling the switch in the top right corner
+4. Click "Load unpacked" button
+5. Select the entire project folder (the one containing `manifest.json` and the `dist` folder)
+6. The extension should now appear in your extensions list and be ready to use
+7. Navigate to Claude.ai and start chatting - you'll receive notifications when Claude finishes responding!
