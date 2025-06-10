@@ -19,7 +19,7 @@ The extension handles one chat session per browser window. To monitor multiple C
 ## Development
 I made this to make my life easier since I use Claude a lot, and I thought it'd be fun to build. Though this was enjoyable, testing extensions is really a pain. 
 
-I'd like to continue improving this with more customization options and support for different AI chats, but that'll have to wait—I need to get a job first lol. 
+I'd like to continue improving this with more customization options and support for different AI chats, but that'll have to wait. 
 
 If you'd like to see something added to the extension, please reach out or open an issue. Even better, contribute to this yourself—I'd love to see that!
 
